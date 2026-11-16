@@ -2,29 +2,25 @@ package main
 
 import (
 	"fmt"
-	"io"
-	"net/http"
+	"os"
 	"strings"
+
+	"github.com/jmdebarro/starlink/internal/tle"
 )
 
+// dataFile is where the downloaded TLEs are saved, relative to where you run
+// the program (run it from the project root: go run ./cmd/starlink).
+const dataFile = "data/starlink.tle"
+
 func main() {
-	url := "https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=tle"
-
-	resp, err := http.Get(url)
+	data, source, err := tle.Load(dataFile)
 	if err != nil {
-		fmt.Println("request failed:", err)
-		return
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("reading body failed:", err)
-		return
+		fmt.Println("error:", err)
+		os.Exit(1)
 	}
 
-	lines := strings.Split(string(body), "\n")
-	fmt.Println("Status:", resp.Status)
+	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+	fmt.Println("Source:", source, "("+dataFile+")")
 	fmt.Println("Satellites:", len(lines)/3)
 
 	for _, line := range lines[:min(6, len(lines))] {
